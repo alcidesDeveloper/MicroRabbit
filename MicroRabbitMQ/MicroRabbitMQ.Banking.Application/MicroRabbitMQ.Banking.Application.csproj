@@ -4,4 +4,9 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MicroRabbitMQ.Banking.Domain\MicroRabbitMQ.Banking.Domain.csproj" />
+    <ProjectReference Include="..\MicroRabbitMQ.Domain.Core\MicroRabbitMQ.Domain.Core.csproj" />
+  </ItemGroup>
+
 </Project>
