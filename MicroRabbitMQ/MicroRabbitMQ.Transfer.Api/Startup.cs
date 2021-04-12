@@ -1,15 +1,25 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using MediatR;
-using MicroRabbitMQ.Banking.Data.Context;
+using MicroRabbitMQ.Domain.Core.Bus;
 using MicroRabbitMQ.Infra.IoC;
+using MicroRabbitMQ.Transfer.Data.Context;
+using MicroRabbitMQ.Transfer.Domain.EventHandlers;
+using MicroRabbitMQ.Transfer.Domain.Events;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 
-namespace MicroRabbitMQ.Banking.Api
+namespace MicroRabbitMQ.Transfer.Api
 {
     public class Startup
     {
@@ -25,24 +35,21 @@ namespace MicroRabbitMQ.Banking.Api
         {
             services.AddControllers();
 
-            services.AddDbContext<BankingDbContext>(options =>
-            options.UseSqlServer(Configuration.GetConnectionString("BankingDbConnection")));
+            services.AddDbContext<TransferDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("TransferDbConnection")));
 
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Banking Microservice", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Transfer Microservice", Version = "v1" });
             });
 
             services.AddMediatR(typeof(Startup));
-
             RegisterServices(services);
-
-            
         }
 
         private void RegisterServices(IServiceCollection services)
         {
-            DependencyContainer.RegisterBankingServices(services);
+            DependencyContainer.RegisterTransferServices(services);
         }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -61,13 +68,21 @@ namespace MicroRabbitMQ.Banking.Api
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Banking Microservice V1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Transfer Microservice V1");
             });
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+
+            ConfigureEventBus(app);
+        }
+
+        private void ConfigureEventBus(IApplicationBuilder app)
+        {
+            var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
+            eventBus.Subscribe<TransferCreatedEvent, TransferEventHandler>();
         }
     }
 }
